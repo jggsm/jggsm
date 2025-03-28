@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Dado D20</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px; 
+            max-width: 500px;
+            margin: auto;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .result { 
+            margin-top: 20px; 
+            font-weight: bold; 
+        }
+        .par { color: green; }
+        .impar { color: red; }
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #007BFF;
+        }
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador de Dado D20</h1>
+        <label for="parity">Selecciona Par o Impar:</label>
+        <select id="parity">
+            <option value="par">Par</option>
+            <option value="impar">Impar</option>
+        </select>
+        
+        <label for="count">Número de tiradas:</label>
+        <select id="count" onchange="toggleCustomInput()">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+            <option value="custom">Otro...</option>
+        </select>
+        <input type="number" id="customCount" min="1" style="display: none;" placeholder="Introduce un número">
+        
+        <label for="dedo">Dedo (doble resultado por tirada)
+            <div class="toggle-switch">
+                <input type="checkbox" id="dedo">
+                <span class="slider"></span>
+            </div>
+        </label>
+        
+        <label for="showOneByOne">Mostrar resultados de 1 en 1
+            <div class="toggle-switch">
+                <input type="checkbox" id="showOneByOne">
+                <span class="slider"></span>
+            </div>
+        </label>
+        
+        <button onclick="rollDice()">Lanzar Dados</button>
+        <button onclick="showNextResult()">Siguiente Resultado</button>
+        <div class="result" id="results"></div>
+    </div>
+
+    <script>
+        let rollResults = [];
+        let currentIndex = 0;
+
+        function toggleCustomInput() {
+            const countSelect = document.getElementById('count');
+            const customInput = document.getElementById('customCount');
+            if (countSelect.value === 'custom') {
+                customInput.style.display = 'block';
+            } else {
+                customInput.style.display = 'none';
+            }
+        }
+
+        function rollDice() {
+            let count = document.getElementById('count').value;
+            if (count === 'custom') {
+                count = document.getElementById('customCount').value || 1;
+            }
+            count = parseInt(count);
+            
+            const parity = document.getElementById('parity').value;
+            const dedo = document.getElementById('dedo').checked;
+            const showOneByOne = document.getElementById('showOneByOne').checked;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "";
+            rollResults = [];
+            currentIndex = 0;
+            
+            for (let i = 0; i < count; i++) {
+                let roll1 = Math.floor(Math.random() * 20) + 1;
+                let type1 = roll1 % 2 === 0 ? "par" : "impar";
+                let resultText = `Tirada ${i + 1}: ${roll1} - ${type1}`;
+                
+                if (dedo) {
+                    let roll2 = Math.floor(Math.random() * 20) + 1;
+                    let type2 = roll2 % 2 === 0 ? "par" : "impar";
+                    resultText += `, ${roll2} - ${type2}`;
+                }
+                
+                rollResults.push(resultText);
+            }
+            
+            if (!showOneByOne) {
+                rollResults.forEach(result => {
+                    let resultItem = document.createElement("p");
+                    resultItem.textContent = result;
+                    resultsDiv.appendChild(resultItem);
+                });
+            } else {
+                showNextResult();
+            }
+        }
+
+        function showNextResult() {
+            const resultsDiv = document.getElementById('results');
+            if (currentIndex < rollResults.length) {
+                const resultItem = document.createElement("p");
+                resultItem.textContent = rollResults[currentIndex];
+                resultsDiv.appendChild(resultItem);
+                currentIndex++;
+            } else {
+                alert("No hay más resultados.");
+            }
+        }
+    </script>
+</body>
+</html>
